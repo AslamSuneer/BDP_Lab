@@ -1,0 +1,15 @@
+x <- c(15, 20, 25, 30, 35, 40)
+y <- c(6, 12, 18, 24, 30, 36)
+cat("mean of x: ", mean(x))
+cat("median of x: ", median(x))
+
+quartiles <- quantile(x)
+cat("1st quantile", quartiles[2])
+cat("3rd quantile", quartiles[4])
+cat("minimum of x", min(x))
+cat("maximum of x", max(x))
+cat("variance of x ", var(x))
+cat("correlation of x and y", cor(x, y))
+cat("covarience of x and y", cov(x, y))
+boxplot(x, main = 'boxplot of x')
+
