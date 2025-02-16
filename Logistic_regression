@@ -61,3 +61,15 @@ class_max_prob <- class_names[max_prob]
 # Print results
 print(prediction)
 cat("Type with the highest probability:", class_max_prob, "\n")
+
+
+#INPUT
+# Malignancy Prediction Inputs
+tumor_size_input <- 120
+thickness_input <- 50
+
+# Multinomial Prediction Inputs
+power_input <- 100
+seats_input <- 5
+price_in_lakhs_input <- 10
+
