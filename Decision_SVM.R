@@ -3,6 +3,8 @@ library(caTools)
 library(e1071)
 library(ggplot2)
 library(C50)
+library(rpart)
+library(rpart.plot)
 
 # Function for Program 1 (SVM)
 run_svm_program <- function() {
@@ -38,6 +40,33 @@ run_svm_program <- function() {
   cm = table(test_set[, 3], y_pred)
   print("Confusion Matrix:")
   print(cm)
+  
+  # Function to visualize decision boundary
+  plot_decision_boundary <- function(set, title) {
+    X1 = seq(min(set[, 1]) - 1, max(set[, 1]) + 1, by = 0.01)
+    X2 = seq(min(set[, 2]) - 1, max(set[, 2]) + 1, by = 0.01)
+    
+    grid_set = expand.grid(X1, X2)
+    colnames(grid_set) = c('Age', 'EstimatedSalary')
+    y_grid = predict(classifier, newdata = grid_set)
+    
+    plot(set[, -3], 
+         main = title, 
+         xlab = 'Age', ylab = 'Estimated Salary', 
+         xlim = range(X1), ylim = range(X2))
+    
+    contour(X1, X2, matrix(as.numeric(y_grid), length(X1), length(X2)), add = TRUE)
+    
+    points(grid_set, pch = '.', col = ifelse(y_grid == 1, 'coral1', 'aquamarine'))
+    
+    points(set, pch = 21, bg = ifelse(set[, 3] == 1, 'green4', 'red3'))
+  }
+  
+  # Visualizing the Training set results
+  plot_decision_boundary(training_set, "SVM with RBF Kernel (Training set)")
+  
+  # Visualizing the Test set results
+  plot_decision_boundary(test_set, "SVM with RBF Kernel (Test set)")
   
   # User Input for Prediction
   pred1 <- function() {
@@ -80,8 +109,8 @@ run_decision_tree_program <- function() {
     mushrooms_data[[col]] <- factor(mushrooms_data[[col]])
   }
   
-  # Train a C5.0 decision tree model
-  model <- C5.0(class ~ ., data = mushrooms_data)
+  # Train a Decision Tree model using rpart
+  model <- rpart(class ~ ., data = mushrooms_data, method = "class")
   
   # Function for custom user input
   get_user_input <- function() {
@@ -89,29 +118,20 @@ run_decision_tree_program <- function() {
     features <- names(mushrooms_data)[-1]  # Exclude target column 'class'
     
     for (feature in features) {
-      repeat {
-        cat(paste0("Enter ", feature, " (", paste(levels(mushrooms_data[[feature]]), collapse=", "), "): "))
-        input_value <- readline()
-        
-        if (input_value %in% levels(mushrooms_data[[feature]])) {
-          user_input[[feature]] <- factor(input_value, levels = levels(mushrooms_data[[feature]]))
-          break
-        } else {
-          cat("Invalid input. Please enter a valid category.\n")
-        }
-      }
+      cat(paste0("Enter ", feature, " (", paste(levels(mushrooms_data[[feature]]), collapse=", "), "): "))
+      user_input[[feature]] <- factor(readline(), levels = levels(mushrooms_data[[feature]]))
     }
     
     return(as.data.frame(user_input))
   }
   
-  # Visualize the decision tree using C5.0's built-in plot function
-  plot(model, main = "Decision Tree Visualization", type = "simple")
+  # Visualize the decision tree using rpart.plot
+  rpart.plot(model, main = "Decision Tree Visualization", type = 3, extra = 101)
   
   # Get user input and make a prediction
   cat("Provide input values for prediction:\n")
   test_data <- get_user_input()
-  prediction <- predict(model, test_data)
+  prediction <- predict(model, test_data, type = "class")
   cat(paste("Predicted Class:", prediction, "\n"))
 }
 
