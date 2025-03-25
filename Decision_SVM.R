@@ -7,10 +7,10 @@ library(C50)
 # Function for Program 1 (SVM)
 run_svm_program <- function() {
   # Load dataset
-  dataset = read.csv('/mnt/data/Social_Network_Ads.csv')
+  dataset = read.csv('/home/ds-da-07/Nibras/Social_Network_Ads.csv')
   
   # Selecting relevant columns
-  dataset = dataset[, c("Age", "EstimatedSalary", "Purchased")]
+  dataset = dataset[, 3:5]  # Keeping only Age, EstimatedSalary, and Purchased
   
   # Encoding the target variable as a factor
   dataset$Purchased = factor(dataset$Purchased, levels = c(0, 1))
@@ -25,7 +25,7 @@ run_svm_program <- function() {
   training_set[, 1:2] = scale(training_set[, 1:2])
   test_set[, 1:2] = scale(test_set[, 1:2])
   
-  # Fitting SVM with RBF Kernel
+  # Fitting SVM with RBF Kernel (Non-Linear)
   classifier = svm(formula = Purchased ~ ., 
                    data = training_set, 
                    type = 'C-classification', 
@@ -38,38 +38,81 @@ run_svm_program <- function() {
   cm = table(test_set[, 3], y_pred)
   print("Confusion Matrix:")
   print(cm)
-}
-
-# Function for Program 2 (Decision Tree with Mushroom Dataset)
-run_decision_tree_program <- function() {
-  # Load the dataset
-  mushroom_data <- read.csv("/mnt/data/mushrooms.csv")
   
-  # Convert categorical columns to factors
-  mushroom_data[] <- lapply(mushroom_data, as.factor)
-  
-  # Train a C5.0 decision tree model
-  model <- C5.0(class ~ ., data = mushroom_data)
-  
-  # Visualize the decision tree
-  plot(model, main = "Decision Tree for Mushroom Classification", type = "simple")
-  
-  # Get user input for prediction
-  get_user_input <- function() {
-    input_data <- mushroom_data[1, -1]  # Copy column names and types
+  # User Input for Prediction
+  pred1 <- function() {
+    # Get user input for Age and Estimated Salary
+    new_age = as.numeric(readline(prompt = "Enter Age: "))
+    new_salary = as.numeric(readline(prompt = "Enter Estimated Salary: "))
     
-    for (col in names(input_data)) {
-      cat(paste("Enter", col, "(" , paste(levels(mushroom_data[[col]]), collapse=", "), "): "))
-      input_value <- readline()
-      input_data[[col]] <- factor(input_value, levels = levels(mushroom_data[[col]]))
+    # Handle invalid input
+    if (is.na(new_age) | is.na(new_salary)) {
+      stop("Invalid input! Please enter numeric values.")
     }
-    return(input_data)
+    
+    # Scale the new input using the same scaling as training data
+    new_data = data.frame(Age = (new_age - mean(dataset$Age)) / sd(dataset$Age),
+                          EstimatedSalary = (new_salary - mean(dataset$EstimatedSalary)) / sd(dataset$EstimatedSalary))
+    
+    # Predict class for new input
+    prediction = predict(classifier, newdata = new_data)
+    print(prediction)
+    
+    # Display result
+    if (prediction == 1) {
+      cat("\nPrediction: The person is likely to Purchase.\n")
+    } else {
+      cat("\nPrediction: The person is NOT likely to Purchase.\n")
+    }
   }
   
-  cat("Provide mushroom features for prediction:\n")
+  # Call the function
+  pred1()
+}
+
+# Function for Program 2 (Decision Tree)
+run_decision_tree_program <- function() {
+  # Load the dataset
+  mushrooms_data <- read.csv("/home/ds-da-07/Nibras/mushrooms.csv")
+  
+  # Convert categorical columns to factors
+  for (col in names(mushrooms_data)) {
+    mushrooms_data[[col]] <- factor(mushrooms_data[[col]])
+  }
+  
+  # Train a C5.0 decision tree model
+  model <- C5.0(class ~ ., data = mushrooms_data)
+  
+  # Function for custom user input
+  get_user_input <- function() {
+    user_input <- list()
+    features <- names(mushrooms_data)[-1]  # Exclude target column 'class'
+    
+    for (feature in features) {
+      repeat {
+        cat(paste0("Enter ", feature, " (", paste(levels(mushrooms_data[[feature]]), collapse=", "), "): "))
+        input_value <- readline()
+        
+        if (input_value %in% levels(mushrooms_data[[feature]])) {
+          user_input[[feature]] <- factor(input_value, levels = levels(mushrooms_data[[feature]]))
+          break
+        } else {
+          cat("Invalid input. Please enter a valid category.\n")
+        }
+      }
+    }
+    
+    return(as.data.frame(user_input))
+  }
+  
+  # Visualize the decision tree using C5.0's built-in plot function
+  plot(model, main = "Decision Tree Visualization", type = "simple")
+  
+  # Get user input and make a prediction
+  cat("Provide input values for prediction:\n")
   test_data <- get_user_input()
   prediction <- predict(model, test_data)
-  cat(paste("Predicted Class (Edible or Poisonous):", prediction, "\n"))
+  cat(paste("Predicted Class:", prediction, "\n"))
 }
 
 # Main Menu
@@ -79,17 +122,17 @@ main_menu <- function() {
     cat("1. Run SVM Program\n")
     cat("2. Run Decision Tree Program\n")
     cat("3. Exit\n")
-    choice <- as.numeric(readline(prompt = "Enter your choice: "))
+    choice <- as.numeric(readline(prompt = "Enter your choice (1, 2, or 3): "))
     
     if (choice == 1) {
       run_svm_program()
     } else if (choice == 2) {
       run_decision_tree_program()
     } else if (choice == 3) {
-      cat("Exit\n")
+      cat("Exiting the program. Goodbye!\n")
       break
     } else {
-      cat("Invalid choice\n")
+      cat("Invalid choice! Please try again.\n")
     }
   }
 }                         
